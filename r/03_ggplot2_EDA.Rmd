@@ -1,0 +1,353 @@
+---
+title: "Exploratory Data Analysis with ggplot2"
+output: html_notebook
+---
+
+##read the data
+
+```{r}
+df <- read.csv('weather_2016.csv', stringsAsFactors = F)
+```
+
+##inspect the data
+
+```{r}
+head(df)
+```
+
+```{r}
+tail(df)
+```
+
+```{r}
+str(df)
+```
+
+##lets reduce number of variables
+
+```{r}
+library(dplyr)
+df <- df %>% 
+  select(date.year:date.min, tempm, hum, pressurem, conds, wdire, wdird, wspdm)
+```
+
+##we need proper dates
+
+```{r}
+df <- df %>% 
+  mutate(date = paste(date.year, date.mon, date.mday, sep='-'),
+         time = paste(date.hour, date.min, sep = ':'),
+         datetime = paste(date, time, sep = ' '),
+         datetime = as.POSIXct(strptime(datetime, format = '%Y-%m-%d %H:%M')),
+         month = lubridate::month(datetime, label = TRUE, abbr = FALSE))
+```
+
+##get seasons
+
+```{r}
+df$season <- case_when(
+  df$month %in% c('January', 'February', 'December') ~ 'winter',
+  df$month %in% c('March', 'April', 'May') ~ 'spring',
+  df$month %in% c('June', 'July', 'August') ~ 'summer',
+  df$month %in% c('September', 'October', 'November') ~ 'autumn'
+)
+
+df$season <- factor(df$season, ordered = TRUE, 
+                    levels = c('winter', 'spring', 'summer', 'autumn'))
+```
+
+##ok, let's go exploring
+
+```{r}
+library(ggplot2)
+ggplot(df, aes(x = tempm, fill=season))+
+  geom_histogram(binwidth = 1)
+```
+
+##color by season
+
+```{r}
+ggplot(df, aes(x = tempm, fill = season))+
+  geom_histogram(binwidth = 1)
+```
+
+##color by season
+
+```{r}
+ggplot(df, aes(x = tempm, fill = season))+
+  geom_density(alpha = 0.3)
+```
+
+##or lets change representation
+
+```{r}
+ggplot(df, aes(x = season, y = tempm, fill=season))+
+  geom_jitter(alpha=0.2) +
+  geom_boxplot(alpha=0.8)
+  
+```
+
+##once again
+
+```{r}
+ggplot(df, aes(x = season, y = tempm))+
+  geom_jitter(alpha = 0.1)+
+  geom_boxplot(fill = NA, color = 'white', size = 1)
+```
+
+##and again
+
+```{r}
+ggplot(df, aes(x = season, y = tempm))+
+  geom_violin()
+```
+
+##and once more
+
+```{r}
+library(ggbeeswarm)
+ggplot(df, aes(x = season, y = tempm, color = tempm))+
+  geom_quasirandom(alpha = 0.1)+
+  viridis::scale_color_viridis()
+```
+
+##and once more
+
+```{r}
+library(ggbeeswarm)
+ggplot(df, aes(x = month, y = tempm, color = tempm))+
+  geom_quasirandom(alpha = 0.1)+
+  viridis::scale_color_viridis()
+```
+
+##show variation during the day
+
+```{r}
+ggplot(df, aes(x = as.Date(datetime), y = time, fill = tempm))+
+  geom_tile()
+```
+
+
+##no, really, show variation during the day
+```{r}
+df %>% filter(stringr::str_detect(df$time, '00|30')) %>% 
+ggplot(aes(x = as.Date(datetime), 
+               y = as.POSIXct(strptime(time, format = '%H:%M')), 
+               fill = tempm))+
+  geom_tile()+
+  scale_y_datetime(date_labels = '%H-%M', date_breaks = '4 hour') +
+  viridis::scale_fill_viridis()
+```
+
+##can we do it another way? sure we can
+
+```{r}
+df %>% filter(stringr::str_detect(df$time, '00|30')) %>% 
+ggplot(aes(x = as.POSIXct(strptime(time, format = '%H:%M')), 
+           y = tempm))+
+  geom_point(alpha=0.1)+geom_smooth()+
+  scale_x_datetime(date_labels = '%H:%M')+
+  facet_wrap(~month)
+```
+
+##summarise by weather conditions
+
+```{r}
+df %>% group_by(conds) %>% 
+  summarise(count = n()) %>% 
+  ggplot(aes(x = reorder(conds, count), y = count))+
+  geom_bar(stat = 'identity')+
+  coord_flip()
+```
+
+##show only rainy days
+
+```{r}
+df %>% filter(stringr::str_detect(conds, pattern = 'Rain')) %>% 
+  ggplot(aes(x = datetime))+
+  geom_linerange(aes(ymin = -1, ymax = 1), alpha = 0.2)
+```
+
+##show only snowy days
+
+```{r}
+df %>% filter(stringr::str_detect(conds, pattern = 'Snow')) %>% 
+  ggplot(aes(x = datetime))+
+  geom_linerange(aes(ymin = -1, ymax = 1, color = tempm), alpha = 0.2)+
+  viridis::scale_color_viridis()
+```
+
+##show 'clear' vs 'cloudy'
+
+```{r}
+df %>% filter(stringr::str_detect(conds, pattern = 'Clear|Cloud')) %>% 
+  ggplot(aes(x = datetime))+
+  geom_linerange(aes(ymin = -1, ymax = 1, color = conds))+
+  scale_color_brewer(type = 'qual')
+```
+
+##show 'clear' vs 'cloudy'
+
+```{r}
+df %>% filter(stringr::str_detect(conds, pattern = 'Clear|Cloud')) %>% 
+  ggplot(aes(x = datetime))+
+  geom_linerange(aes(ymin = -1, ymax = 1, color = conds), size = 0.1)+
+  scale_color_brewer(type = 'qual', palette = 2)+
+  facet_wrap(~conds, ncol = 1)
+```
+
+##explore winds data
+
+```{r}
+df %>% group_by(wdire) %>% 
+  summarise(count = n()) %>% 
+  ggplot(aes(reorder(wdire, count), count))+
+  geom_bar(stat = 'identity')+
+  coord_flip()
+```
+
+##explore winds data
+
+```{r}
+df %>% group_by(wdire, season) %>% 
+  summarise(count = n()) %>% 
+  ggplot(aes(reorder(wdire, count), count))+
+  geom_bar(stat = 'identity')+
+  coord_flip()+
+  facet_wrap(~season, ncol = 4)
+```
+
+##wind direction by season
+
+```{r}
+ggplot(df, aes(x = wdird))+
+  geom_histogram()+
+  facet_wrap(~season) +
+  coord_polar()
+```
+
+##wind speed by season
+
+```{r}
+ggplot(df, aes(x = wspdm))+
+  geom_histogram()+
+  facet_wrap(~season)
+```
+
+##wind direction vs wind speed
+
+```{r}
+ggplot(df, aes(x = wdird, y = wspdm))+
+  geom_point(alpha = 0.25)+
+  facet_wrap(~season)
+```
+
+##wind direction vs wind speed
+
+```{r}
+ggplot(df, aes(x = wdird, y = wspdm))+
+  geom_count(alpha = 0.5)+
+  facet_wrap(~season)
+```
+
+##wind direction vs wind speed
+
+```{r}
+ggplot(df, aes(x = wdird, y = wspdm))+
+  geom_count(aes(color = ..n..), alpha = 1)+
+  viridis::scale_color_viridis(option = 'magma', direction = -1)+
+  facet_wrap(~season)
+```
+
+##wind direction vs wind speed
+
+```{r}
+ggplot(df, aes(x = wdire, y = wspdm))+
+  geom_count(aes(color = ..n..), alpha = 1)+
+  viridis::scale_color_viridis(option = 'magma', direction = -1)+
+  coord_flip()+
+  facet_wrap(~season)
+```
+
+##wind speed by month
+
+```{r}
+library(ggjoy)
+ggplot(df, aes(x = wspdm, y = month))+
+  geom_joy()
+```
+
+##wind speed by month
+
+```{r}
+library(forcats)
+ggplot(df, aes(x = wspdm, y = fct_rev(month)))+
+  geom_joy()
+```
+
+##daily means
+```{r}
+df %>% mutate(date = as.Date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(temp_avg = mean(tempm, na.rm = T)) %>% 
+  ggplot(aes(x = date, y = temp_avg))+
+  geom_line()
+```
+
+##daily ranges
+```{r}
+df %>% mutate(date = as.Date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(temp_min = min(tempm, na.rm = T),
+            temp_max = max(tempm, na.rm = T),
+            temp_avg = mean(tempm, na.rm = T)) %>% 
+  ggplot(aes(x = date))+
+  geom_linerange(aes(ymin = temp_min, ymax = temp_max))
+```
+
+
+##daily ranges and daily means
+```{r}
+df %>% mutate(date = as.Date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(temp_min = min(tempm, na.rm = T),
+            temp_max = max(tempm, na.rm = T),
+            temp_avg = mean(tempm, na.rm = T)) %>% 
+  ggplot(aes(x = date))+
+  geom_linerange(aes(ymin = temp_min, ymax = temp_max), 
+                 color = 'gray', alpha = 0.7)+
+  geom_line(aes(y = temp_avg), color = 'darkcyan', size = 0.5)
+```
+
+##daily ranges and daily means
+```{r}
+df %>% mutate(date = as.Date(datetime)) %>% 
+  group_by(date) %>% 
+  summarise(temp_min = min(tempm, na.rm = T),
+            temp_max = max(tempm, na.rm = T),
+            temp_avg = mean(tempm, na.rm = T)) %>% 
+  ggplot(aes(x = date))+
+  geom_ribbon(aes(ymin = temp_min, ymax = temp_max), 
+                 fill = 'gray', alpha = 0.7)+
+  geom_line(aes(y = temp_avg), color = 'darkcyan', size = 0.3)
+```
+
+##temp vs humidity
+
+```{r}
+ggplot(df, aes(hum, tempm))+
+  geom_jitter()
+```
+
+##temp vs humidity
+
+```{r}
+ggplot(df, aes(pressurem, tempm))+
+  geom_jitter()
+```
+
+##customize
+
+```{r}
+
+```
