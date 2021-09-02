@@ -1,0 +1,607 @@
+---
+title: "ggplot2: elegant graphics for data analysis"
+output: html_notebook
+---
+
+##purpose of this section
+
+* Provide overview of plotting frameworks in R
+* Give an introduction to ggplot2 library
+* Learn how to produce various graphics with ggplot2
+
+##software
+
+* R version 3.4.0
+* R Studio 1.0.143
+* base, graphics, lattice, ggplot2, ggthemes, ggalt, ggrepel, raster
+
+##what libraries we can use to visualize data in R?
+
+* base plotting system
+* lattice
+* ggplot2
+* ggvis, vegalite, plotly
+
+##base plotting system: simple scatterplot
+
+```{r}
+View(cars)
+plot(cars)
+```
+
+##base plotting system: line graph
+
+```{r}
+plot(EuStockMarkets)
+```
+
+##base plotting system: scatterplot matrix
+
+```{r}
+plot(iris)
+```
+
+##base plotting system: customisation
+
+```{r}
+plot(cars, xlab = "Speed (mph)", ylab = "Stopping distance (ft)",
+     las = 1)
+lines(lowess(cars$speed, cars$dist), col = "red")
+title(main = "cars data")
+```
+
+##base plotting system: pros and cons
+
+###pros
+
+* short and simple syntax 
+* generic functions
+* good for quick and dirty dataviz
+
+###cons
+
+* hard to customise
+* hard to get good looking graphics
+* hard to get outside-the-box plots
+* no active development and new features
+
+##lattice
+
+```{r}
+library(lattice)
+```
+
+##lattice: scatterplot
+
+```{r}
+xyplot(cars$dist ~ cars$speed)
+```
+
+##lattice: line graph
+
+```{r}
+xyplot(EuStockMarkets)
+```
+
+
+
+##lattice: scatterplot matrix
+
+```{r}
+splom(iris)
+```
+
+##lattice: pros and cons
+
+###pros
+
+* good for statistical graphics
+* more flexible than base plotting system
+
+###cons
+
+* no major developments
+* still hard to produce outside-the-box graphics
+
+##ggplot2
+
+```{r}
+library(ggplot2)
+```
+
+##ggplot2: scatterplot
+
+```{r}
+ggplot(data = cars, aes(x = dist, y = speed))+
+  geom_point()
+```
+
+##ggplot2: pros and cons
+
+###pros
+
+* based on Grammar of Graphics
+* provides good defaults
+* provides controls for almost every aspect of the plot
+* active development
+
+###cons
+
+* complex syntax
+* high entry treshold
+
+##ggplot2: plot structure
+
+```{r eval=FALSE}
+ggplot(data, aes(x = x, y = y, color = color, size = size), alpha = '')+
+  geom_()+
+  scale_x_()+
+  scale_y_()+
+  scale_color_()+
+  scale_size_()+
+  coord_()+
+  facet_()+
+  labs(title = '', subtitle = '', caption = '')+
+  theme_minimal(base_family = '', base_size = '')+
+  theme(
+    legend.position = '',
+    plot.background = element_rect(fill = ''),
+    plot.title = element_text(),
+    plot.subtitle = element_text(),
+    plot.caption = element_text(),
+    plot.margin = unit()
+  )
+
+```
+
+##ggplot2: plot structure
+
+```{r}
+g <- ggplot(cars, aes(x = speed, y = dist))+
+  geom_point()
+
+str(g)
+```
+
+##ggplot2: data
+
+**Data - data frame with variables to be plotted**
+
+```{r}
+ggplot(iris)
+```
+
+
+##ggplot2: aestethics
+
+**Aesthetics - scales on which data is mapped**
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length))
+
+```
+
+##ggplot2: available aesthetics
+
+```{r}
+ggplot2:::.all_aesthetics
+```
+
+##ggplot2: geometry
+
+**Geometry - shapes used to represent your data**
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length))+
+  geom_histogram()
+```
+
+##ggplot2: encoding data
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, fill = Species))+
+  geom_histogram()
+```
+
+##ggplot2: decorating data
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length))+
+  geom_histogram(fill = 'darkcyan')
+```
+
+##ggplot2: available geometries
+
+```{r}
+ls(pattern = '^geom_', env = as.environment('package:ggplot2'))
+```
+
+##ggplot2: geometries
+
+```{r}
+ggplot(presidential)+
+  geom_linerange(aes(x = reorder(name, start), ymin = start, ymax = end, color = party), size = 2)
+```
+View(presidential)
+
+
+##ggplot2: geometries
+
+```{r}
+ggplot(economics, aes(date, uempmed))+
+  geom_line()
+```
+
+##ggplot2: position
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, fill = Species))+
+  geom_histogram(position = 'stack')
+```
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, fill = Species))+
+  geom_histogram(position = 'dodge')
+```
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, fill = Species))+
+  geom_histogram(position = 'fill')
+```
+
+##ggplot2: positions
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species))+
+  geom_point(position = 'jitter')
+```
+
+##ggplot2: available positions
+
+```{r}
+ls(pattern = '^position_', env = as.environment('package:ggplot2'))
+```
+
+##ggplot2: combining geometries
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width, color = Species))+
+  geom_point()+
+  geom_smooth()
+```
+
+##ggplot2: combining geometries
+
+```{r}
+ggplot(iris, aes(x = Sepal.Length, y = Petal.Width, color = Species))+
+  geom_point(size = 2)+
+  geom_smooth(method = 'lm', se = FALSE, size = 0.5)
+```
+
+##ggplot2: combining geometries
+
+```{r}
+ggplot(economics, aes(date, psavert))+
+  geom_area(fill = 'darkcyan', alpha = 0.2)+
+  geom_line(color = 'darkcyan', size = 0.5)
+```
+
+##ggplot: combining geometries and data sources
+
+```{r}
+ukraine <- raster::getData(name = "GADM", country = "UKR", level = 1)
+ukraine <- fortify(ukraine)
+
+cities <- read.csv("https://raw.githubusercontent.com/andriy-gazin/population-map/master/geocoded.csv", 
+stringsAsFactors = F)
+
+ggplot(ukraine)+
+  geom_polygon(aes(long, lat, group = group), 
+               color = "#3A3F4A", fill = "#EFF2F4", size = 0.1)+
+  geom_point(data = cities,
+             aes(lon, lat), alpha = 0.75, size = 0.5)
+```
+
+
+##ggplot2: statistics
+
+**Statistics is a way of transforming data during plotting**
+
+```{r eval=F}
+ggplot(iris, aes(x = Sepal.Length, fill = Species))+
+  geom_bar(stat = 'count')
+```
+
+##ggplot2: statistics
+
+```{r eval=F}
+ggplot(mtcars)+
+  geom_bar(aes(x = row.names(mtcars), y = mpg), stat = 'identity')
+```
+
+##ggplot2: statistics
+
+```{r}
+ggplot(diamonds, aes(x = carat, y = price))+
+  geom_point()
+```
+
+```{r}
+ggplot(diamonds, aes(x = carat, y = price))+
+  geom_point()+
+  stat_binhex()
+```
+
+```{r}
+ggplot(iris, aes(x = Sepal.Width, y = Petal.Width))+
+  geom_point()+
+  stat_sum()
+```
+
+##ggplot2: available stats
+
+```{r}
+ls(pattern = '^stat_', env = as.environment('package:ggplot2'))
+```
+
+##ggplot2: scales
+
+**Scale is a way of transforming data points to screen points**
+
+```{r}
+ggplot(iris, aes(x = Sepal.Width, y = Petal.Width))+
+  geom_count(aes(color = ..n..))+
+  scale_size_area(max_size = 5) +
+  viridis::scale_color_viridis(option="magma")
+```
+
+##ggplot2: scales
+
+```{r}
+ggplot(iris, aes(x = Sepal.Width, y = Petal.Width, color = Species))+
+  geom_point()+
+  scale_color_brewer(type = 'qual', palette = 2)
+```
+##ggplot2: scales
+
+```{r}
+ggplot(iris, aes(x = Sepal.Width, y = Petal.Width, color = Species))+
+  geom_point()+
+  scale_color_manual(values = c('red', 'green', 'blue'))
+```
+
+##ggplot2: scales
+
+```{r}
+ggplot(diamonds, aes(x = carat, y = price))+
+  geom_point(alpha = 0.1)+
+  scale_y_log10()
+```
+
+##ggplot2: scales
+
+```{r}
+ggplot(iris, aes(x = Sepal.Width, y = Petal.Width, color = Species))+
+  geom_point()+
+  scale_x_continuous(minor_breaks = NULL)+
+  scale_y_reverse(breaks = seq(0,2.5,0.25), labels=paste(seq(0,2.5,0.25)))+
+  scale_color_manual(values = c('red', 'green', 'blue'))
+```
+
+##ggplot2: available scales
+
+```{r}
+ls(pattern = '^scale_', env = as.environment('package:ggplot2'))
+```
+
+
+##ggplot2: coordinates
+
+**Coordinates is a way of positioning screen points**
+
+```{r}
+ggplot(mtcars)+
+  geom_bar(aes(x = row.names(mtcars), y = mpg), stat = 'identity')
+```
+
+##ggplot2: coordinates, coord_flip
+
+```{r}
+ggplot(mtcars)+
+  geom_bar(aes(x = reorder(row.names(mtcars), mpg), y = mpg), stat = 'identity')+
+  coord_flip() + labs(x="Car Models", y="MPG", caption="Source of the Data", title="MPG for each Car Model")
+```
+
+##ggplot2: coordinates
+
+```{r}
+ggplot(presidential)+
+  geom_linerange(aes(x = reorder(name, start), ymin = start, ymax = end, color = party), size = 2)+
+  coord_flip()+
+  
+```
+
+
+##ggplot2: available coordinates
+
+```{r}
+ls(pattern = '^coord_', env = as.environment('package:ggplot2'))
+```
+
+
+##ggplot2: facets
+
+**Facets are rows and columns of subplot **
+
+```{r}
+ggplot(iris)+
+  geom_point(aes(x = Sepal.Length, y = Sepal.Width))+
+  facet_wrap(~Species)
+```
+
+##ggplot2: facets
+
+```{r}
+ggplot(diamonds)+
+  geom_point(aes(x = carat, y = price))+
+  facet_wrap(~color, nrow=1)
+```
+
+##ggplot2: theme
+
+**Theme is a way of decorating plot**
+
+```{r}
+ggplot(iris)+
+  geom_point(aes(x = Sepal.Length, y = Sepal.Width))+
+  facet_wrap(~Species)+
+  theme_gray()
+```
+
+##ggplot2: built-in themes
+
+```{r}
+ggplot(iris)+
+  geom_point(aes(x = Sepal.Length, y = Sepal.Width))+
+  facet_wrap(~Species)+
+  theme_dark()
+```
+
+```{r}
+ggplot(iris)+
+  geom_point(aes(x = Sepal.Length, y = Sepal.Width))+
+  facet_wrap(~Species)+
+  theme_linedraw()
+```
+
+##ggplot2: available themes
+
+```{r}
+ls(pattern = '^theme_', env = as.environment('package:ggplot2'))
+```
+
+##ggplot2: extra ggthemes package
+
+```{r}
+library(ggthemes)
+ggplot(iris)+
+  geom_point(aes(x = Sepal.Length, y = Sepal.Width))+
+  facet_wrap(~Species)+
+  theme_fivethirtyeight()
+```
+
+```{r}
+library(ggthemes)
+ggplot(iris)+
+  geom_point(aes(x = Sepal.Length, y = Sepal.Width))+
+  facet_wrap(~Species)+
+  theme_wsj()
+```
+
+```{r}
+library(ggthemes)
+ggplot(iris)+
+  geom_point(aes(x = Sepal.Length, y = Sepal.Width))+
+  facet_wrap(~Species)+
+  theme_economist()
+```
+
+```{r}
+ukraine <- raster::getData(name = "GADM", country = "UKR", level = 1)
+ukraine <- fortify(ukraine)
+
+cities <- read.csv("https://raw.githubusercontent.com/andriy-gazin/population-map/master/geocoded.csv", 
+stringsAsFactors = F)
+
+ggplot(ukraine)+
+  geom_polygon(aes(long, lat, group = group), 
+               color = "#3A3F4A", fill = "#EFF2F4", size = 0.1)+
+  geom_point(data = cities,
+             aes(lon, lat), alpha = 0.75, size = 0.5)+
+  theme_map()
+```
+
+
+##ggthemes: available themes
+
+```{r}
+library(ggthemes)
+ls(pattern = '^theme_', env = as.environment('package:ggthemes'))
+```
+
+##ggplot2: custom theme
+
+```{r}
+library(ggthemes)
+ggplot(iris)+
+  geom_point(aes(x = Sepal.Length, y = Sepal.Width), color = 'darkcyan', size = 2)+
+  facet_wrap(~Species)+
+  theme_minimal()+
+  theme(
+    text = element_text(family = 'Ubuntu Condensed', size = 12),
+    rect = element_rect(fill = '#ece2f0'),
+    line = element_line(linetype = 'dotted', size = 0.2),
+    strip.text = element_text(face = 'bold', size = rel(1.1)),
+    panel.spacing.x = unit(1.1, 'lines'),
+    axis.text = element_text(size = rel(1.01)),
+    axis.title = element_blank(),
+    panel.grid.major = element_line(color = '#000000'),
+    plot.margin = unit(c(1, 1, 1, 1), 'cm'),
+    plot.background = element_rect()
+  )
+```
+
+##ggplot2: extensions
+
+* ggalt
+* ggraph
+* ggmap
+* geofacet
+* viridis
+* scales
+* ggrepel
+* gganimate
+* ggmosaic
+* gganimate
+* ggjoy
+* ggthemes
+* ggthemer
+* ggedit
+
+##ggalt
+```{r}
+library(ggalt)
+ggplot(mtcars)+
+  geom_lollipop(aes(x = reorder(row.names(mtcars), mpg), y = mpg))+
+  coord_flip()
+
+```
+
+##ggrepel
+
+```{r}
+ggplot(mtcars, aes(x = mpg, y = hp))+
+  geom_point()+
+  geom_text(aes(label = rownames(mtcars), family = 'Ubuntu Condensed'))
+```
+
+```{r}
+library(ggrepel)
+ggplot(mtcars, aes(x = mpg, y = hp))+
+  geom_point()+
+  geom_text_repel(aes(label = rownames(mtcars), family = 'Ubuntu Condensed'))
+```
+
+##viridis
+
+```{r}
+library(viridis)
+ggplot(diamonds, aes(x = carat, y = price))+
+  geom_hex()+
+  scale_fill_viridis()
+```
+
+##where to learn about ggplot2
+
+* ggplot2 docs
+* stackoverflow
